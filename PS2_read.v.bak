@@ -1,0 +1,88 @@
+
+module PS2_read (
+	// Inputs
+	CLOCK_50,
+	KEY,
+
+	// Bidirectionals
+	PS2_CLK,
+	PS2_DAT,
+);
+
+/*****************************************************************************
+ *                           Parameter Declarations                          *
+ *****************************************************************************/
+parameter upArrow = 8'b01110101, downArrow = 8'b 01110010, rightArrow = 8'b 01110100, leftArrow = 8'b 01101011, break = 8'b 00001111;
+
+/*****************************************************************************
+ *                             Port Declarations                             *
+ *****************************************************************************/
+
+// Inputs
+input				CLOCK_50;
+input		[3:0]	KEY;
+
+// Bidirectionals
+inout				PS2_CLK;
+inout				PS2_DAT;
+
+/*****************************************************************************
+ *                 Internal Wires and Registers Declarations                 *
+ *****************************************************************************/
+
+// Internal Wires
+wire		[7:0]	ps2_key_data;
+wire				ps2_key_pressed;
+
+// Internal Registers
+reg			[7:0]	last_data_received;
+
+// State Machine Registers
+
+/*****************************************************************************
+ *                         Finite State Machine(s)                           *
+ *****************************************************************************/
+
+
+/*****************************************************************************
+ *                             Sequential Logic                              *
+ *****************************************************************************/
+
+always @(posedge CLOCK_50)
+begin
+	if (KEY[0] == 1'b0)
+		last_data_received <= 8'h00;
+	else if (ps2_key_pressed == 1'b1)
+		last_data_received <= ps2_key_data;
+end
+
+
+/*****************************************************************************
+ *                            Combinational Logic                            *
+ *****************************************************************************/
+
+assign LEDR[0] = (last_data_received == upArrow) ? 1:0;
+assign LEDR[1] = (last_data_received == downArrow) ? 1:0;
+assign LEDR[2] = (last_data_received == leftArrow) ? 1:0;
+assign LEDR[3] = (last_data_received == rightArrow) ? 1:0;
+
+/*****************************************************************************
+ *                              Internal Modules                             *
+ *****************************************************************************/
+
+PS2_Controller PS2 (
+	// Inputs
+	.CLOCK_50				(CLOCK_50),
+	.reset				(~KEY[0]),
+
+	// Bidirectionals
+	.PS2_CLK			(PS2_CLK),
+ 	.PS2_DAT			(PS2_DAT),
+
+	// Outputs
+	.received_data		(ps2_key_data),
+	.received_data_en	(ps2_key_pressed)
+);
+
+endmodule
+
